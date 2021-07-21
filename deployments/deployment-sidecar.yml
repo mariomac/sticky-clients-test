@@ -1,4 +1,4 @@
-# three node (two workers) cluster config
+# Clients can connect to the servers via localhost, if they are inside a pod
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
@@ -11,22 +11,15 @@ spec:
     metadata:
       labels:
         name: server
+        collector: netflow
     spec:
       containers:
         - name: server
           image: quay.io/mmaciasl/sticky-test-server:latest
           imagePullPolicy: Always
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: server
-spec:
-  #Disabled, as requires:
-  #internalTrafficPolicy: Local
-  selector:
-    name: server
-  ports:
-    - port: 8080
-      protocol: TCP
-      targetPort: 8080
+        - name: client
+          image: quay.io/mmaciasl/sticky-test-client:latest
+          imagePullPolicy: Always
+          env:
+            - name: SERVER_URL
+              value: 'http://localhost:8080'
