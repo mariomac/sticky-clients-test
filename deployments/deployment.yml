@@ -1,0 +1,32 @@
+# three node (two workers) cluster config
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: server
+spec:
+  selector:
+    matchLabels:
+      name: server
+  template:
+    metadata:
+      labels:
+        name: server
+    spec:
+      containers:
+        - name: server
+          image: quay.io/mmaciasl/sticky-test-server:latest
+          imagePullPolicy: Always
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: server
+spec:
+  #Disabled, as requires:
+  #internalTrafficPolicy: Local
+  selector:
+    name: server
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080

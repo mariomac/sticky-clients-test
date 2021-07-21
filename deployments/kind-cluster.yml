@@ -1,6 +1,9 @@
 # three node (two workers) cluster config
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+# This would do the job, but does not seem a broadly adopted feature
+#featureGates:
+#  ServiceInternalTrafficPolicy: true
 nodes:
   - role: control-plane
   - role: worker

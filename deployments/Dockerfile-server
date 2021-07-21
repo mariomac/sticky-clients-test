@@ -1,0 +1,14 @@
+FROM golang:1.16 as build
+
+WORKDIR /code
+COPY . .
+RUN go build -o server cmd/server/server.go
+
+FROM ubuntu:focal
+
+WORKDIR /
+COPY --from=build /code/server /server
+CMD ["/server"]
+
+
+
