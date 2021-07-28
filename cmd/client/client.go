@@ -2,8 +2,12 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"log"
 	"net/http"
 	"os"
@@ -14,12 +18,46 @@ func main() {
 	hostname, err := os.Hostname()
 	panicOnErr(err)
 
-	serverURL := os.Getenv("SERVER_URL")
+	serverURL, ok := os.LookupEnv("SERVER_URL")
+	if !ok {
+		serverURL = "http://" + fetchNodeHost() + ":30080"
+	}
+	log.Printf("pinging to server: %v", serverURL)
 
 	for {
 		pingServer(serverURL, hostname)
 		time.Sleep(5 * time.Second)
 	}
+}
+
+func fetchNodeHost() string {
+	currentPodName, err := os.Hostname()
+	panicOnErr(err)
+	cfg, err := rest.InClusterConfig()
+	panicOnErr(err)
+	clientSet, err := kubernetes.NewForConfig(cfg)
+	panicOnErr(err)
+	currentPod, err := clientSet.CoreV1().Pods("default").
+		Get(context.Background(), currentPodName, v1.GetOptions{})
+	panicOnErr(err)
+	log.Printf("pod %v is in node %v", currentPodName, currentPod.Spec.NodeName)
+	currentNode, err := clientSet.CoreV1().Nodes().
+		Get(context.Background(), currentPod.Spec.NodeName, v1.GetOptions{})
+	panicOnErr(err)
+	for _, addr := range currentNode.Status.Addresses {
+		if addr.Type == "InternalIP" {
+			return addr.Address
+		}
+	}
+	for _, addr := range currentNode.Status.Addresses {
+		if addr.Type == "InternalDNS" {
+			return addr.Address
+		}
+	}
+	for _, addr := range currentNode.Status.Addresses {
+		return addr.Address
+	}
+	panic("can't find any address")
 }
 
 func pingServer(serverURL, clientHostname string) {

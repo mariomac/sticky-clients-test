@@ -1,4 +1,4 @@
-# Clients can connect to the servers via localhost, if they are inside a pod
+# Clients can connect to the servers via localhost, if they are inside the same pod
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
